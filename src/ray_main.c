@@ -52,6 +52,7 @@ int ray_init(void)
 int ray_main(void)
 {
     /* CControl value for this instance of the program */
+    s_radius            = 15;           // Default light radius
     n_rays              = 360;
     n_bounds            = 5;            // First four are screen edges
     m_luminance         = 25;           // Whole ints between 0 and 100
@@ -75,16 +76,16 @@ int ray_main(void)
         point and will use the same algorithm to
         calculate outer points.
     */
-    Light light_1;
-    new_light(&light_1, 15);
-
-    light_1._rays       = malloc(n_rays * sizeof(Ray));
-    light_1._luminance  = map(m_luminance, 0, 100, 0 , SCREEN_WIDTH);
-
-    for(int i = 0; i < n_rays; i++)
+    Light lights[3];
+    for(int i = 0; i < 3; i++)
     {
-        light_1._rays[i] = new_ray(&light_1);
+        Light l;
+        new_light(&l, s_radius, n_rays, m_luminance);
+
+        lights[i] = l;
     }
+    // Light light_1;
+    // new_light(&light_1, s_radius, n_rays, m_luminance);
 
     while(quit == 0)
     {
@@ -123,21 +124,25 @@ int ray_main(void)
         }
 
         /* Reposition light to mouse pointer */
-        if(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT))
+        for(int i = 0; i < 3; i++)
         {
-            move_light(&light_1, m_x, m_y);
+            if(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT) &
+               inside_circle(lights[i]._x_pos, lights[i]._y_pos, lights[i]._radius, m_x, m_y) == 1)
+            {
+                move_light(&lights[i], m_x, m_y);
+            }
         }
 
         /* Update _luminance */
-        light_1._luminance  = map(m_luminance, 0, 100, 0 , SCREEN_WIDTH);
+        for(int i = 0; i < 3; i++)
+        {
+            lights[i]._luminance  = map(m_luminance, 0, 100, lights[i]._radius, SCREEN_WIDTH);
+        }
         
         /* reset all the rays to a mapped length based on _luminance. */
-        for(int i = 0; i < n_rays; i++)
+        for(int i = 0; i < 3; i++)
         {
-            a = (TAU / n_rays) * i;
-
-            light_1._rays[i]._x_endpt    = (int)light_1._rays[i]._x_pos + light_1._luminance * cos(a);
-            light_1._rays[i]._y_endpt    = (int)light_1._rays[i]._y_pos + light_1._luminance * sin(a);
+            reset_light(&lights[i]);
         }
 
         /* Reset renderer for this new frame */
@@ -158,24 +163,32 @@ int ray_main(void)
         {
             SDL_RenderDrawLine(gRenderer, bounds[i]._x1, bounds[i]._y1, bounds[i]._x2, bounds[i]._y2);
 
-            for(int j = 0; j < n_rays; j++)
+            for(int j = 0; j < 3; j++)
             {
-                if(check_intersection(&light_1._rays[j], &bounds[i], &intersect) == 1)
-                {
-                    trim_ray(&light_1._rays[j], &intersect);
-                }
+                do_block_light(&lights[j], &bounds[i]);
             }
+
+            // for(int j = 0; j < n_rays; j++)
+            // {
+            //     if(check_intersection(&light_1._rays[j], &bounds[i], &intersect) == 1)
+            //     {
+            //         trim_ray(&light_1._rays[j], &intersect);
+            //     }
+            // }
         }
 
         /* Render the light rays and light in light blue. */
         SDL_SetRenderDrawColor(gRenderer, 0xDA, 0xFB, 0xFA, 0x32);
-        for(int i = 0; i < n_rays; i++)
+        for(int i = 0; i < 3; i++)
         {
-            SDL_RenderDrawLine(gRenderer, light_1._rays[i]._x_pos, light_1._rays[i]._y_pos,
-                               light_1._rays[i]._x_endpt, light_1._rays[i]._y_endpt);
-        }
+            for(int j = 0; j < n_rays; j++)
+            {
+                SDL_RenderDrawLine(gRenderer, lights[i]._rays[j]._x_pos, lights[i]._rays[j]._y_pos,
+                                   lights[i]._rays[j]._x_endpt, lights[i]._rays[j]._y_endpt);
+            }
 
-        draw_circle(gRenderer, light_1._x_pos, light_1._y_pos, light_1._radius);
+            draw_circle(gRenderer, lights[i]._x_pos, lights[i]._y_pos, lights[i]._radius);
+        }
 
         /* Present new frame */
         SDL_RenderPresent(gRenderer);
@@ -246,6 +259,25 @@ void get_intersection(Ray* ray, Boundary* b, Intersection* i, float t)
 }
 
 /*
+    do_block_light()
+
+    Calculates intersections for each ray of the given light
+    against the given bound and updates the rays.
+*/
+void do_block_light(Light* l, Boundary* b)
+{
+    Intersection intersection;
+
+    for(int i = 0; i < l->_n_rays; i++)
+    {
+        if(check_intersection(&l->_rays[i], b, &intersection) == 1)
+        {
+            trim_ray(&l->_rays[i], &intersection);
+        }
+    }
+}
+
+/*
     trim_ray()
 
     Set ray line segment outer points to those provided by
@@ -283,13 +315,39 @@ void trim_ray(Ray* ray, Intersection* i)
 
     Create a new light object of the given radius.
 */
-void new_light(Light* l, int radius_)
+void new_light(Light* l, int radius_, int n_rays_, int m_luminance_)
 {
-    l->_radius   = radius_;
-    l->_x_pos    = SCREEN_WIDTH / 2;
-    l->_y_pos    = SCREEN_HEIGHT / 2;
-    l->_x_vect   = rand_i(-5, 5);
-    l->_y_vect   = rand_i(-5, 5);
+    l->_radius      = radius_;
+    l->_x_pos       = rand_i(0, SCREEN_WIDTH);
+    l->_y_pos       = rand_i(0, SCREEN_HEIGHT);
+    l->_x_vect      = rand_i(-5, 5);
+    l->_y_vect      = rand_i(-5, 5);
+    l->_n_rays      = n_rays_;
+
+    l->_rays        = malloc(n_rays_ * sizeof(Ray));
+    l->_luminance   = map(m_luminance_, l->_radius, 100, 0 , SCREEN_WIDTH);
+
+    new_rays(l);
+}
+
+/*
+    reset_light()
+
+    Resets all rays maximum sized based on luminance.
+    This allows for proper calculation of ray to obstruction
+    intersction points later in the loop.
+*/
+void reset_light(Light* l)
+{
+    float _a;
+
+    for(int i = 0; i < l->_n_rays; i++)
+    {
+        _a = (TAU / l->_n_rays) * i;
+
+        l->_rays[i]._x_endpt    = (int)l->_rays[i]._x_pos + l->_luminance * cos(_a);
+        l->_rays[i]._y_endpt    = (int)l->_rays[i]._y_pos + l->_luminance * sin(_a);
+    }
 }
 
 /*
@@ -297,15 +355,22 @@ void new_light(Light* l, int radius_)
 
     Create and return a new Ray object.
 */
-Ray new_ray(Light* l)
+void new_rays(Light* l)
 {
-    Ray r;
-    r._x_pos       = l->_x_pos;
-    r._y_pos       = l->_y_pos;
-    r._x_endpt     = r._x_pos + l->_luminance * cos(a) + 0.5;
-    r._y_endpt     = r._y_pos + l->_luminance * sin(a) + 0.5;
+    float _a;
 
-    return r;
+    for(int i = 0; i < l->_n_rays; i++)
+    {
+        _a = (TAU / l->_n_rays) * i;
+
+        Ray r;
+        r._x_pos       = l->_x_pos;
+        r._y_pos       = l->_y_pos;
+        r._x_endpt     = r._x_pos + l->_luminance * cos(_a) + 0.5;
+        r._y_endpt     = r._y_pos + l->_luminance * sin(_a) + 0.5;
+
+        l->_rays[i] = r;
+    }
 }
 
 /*

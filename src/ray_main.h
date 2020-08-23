@@ -29,6 +29,7 @@ typedef struct {
     int _x_vect;
     int _y_vect;
     int _radius;
+    int _n_rays;
     int _luminance;
     Ray* _rays;
 } Light;
@@ -73,8 +74,9 @@ int m_y;
 int n_rays;
 int n_bounds;
 
-/* Control light ray properties */
+/* Control light properties */
 int m_luminance;
+int s_radius;
 
 /* MATH */
 float a;
@@ -89,8 +91,8 @@ extern int check_intersection(Ray* ray, Boundary* b, Intersection* i);
 
 extern void get_intersection(Ray* ray, Boundary* b, Intersection* i, float t);
 extern void trim_ray(Ray* ray, Intersection* i);
-extern void new_light(Light* l, int radius_);
-
-extern Ray new_ray(Light* l);
-
+extern void new_light(Light* l, int radius_, int n_rays_, int m_luminance_);
+extern void new_rays(Light* l);
 extern void move_light(Light* l, int x, int y);
+extern void reset_light(Light* l);
+extern void do_block_light(Light* l, Boundary* b);
