@@ -1,6 +1,7 @@
 /* ray_sdl.h */
 
 #include <SDL2/SDL.h>
+#include "lib/ellipse.h"
 
 /*
     Global SDL assets
@@ -28,6 +29,7 @@ int     quit_program;
 */
 int     play;
 int     pause;
+int     mouse_click;
 
 /*
     SDL use

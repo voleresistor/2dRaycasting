@@ -8,16 +8,30 @@
 
 /* Custom Libraries */
 #include "ray_sdl.h"
+#include "lib/util.h"
 
 /*
-    LightRay struct
+    Ray struct
+*/
+typedef struct {
+    int _x_pos;
+    int _y_pos;
+    int _x_endpt;
+    int _y_endpt;
+} Ray;
+
+/*
+    Light struct
 */
 typedef struct {
     int _x_pos;
     int _y_pos;
     int _x_vect;
     int _y_vect;
-} LightRay;
+    int _radius;
+    int _luminance;
+    Ray* _rays;
+} Light;
 
 /*
     Boundary struct
@@ -59,6 +73,9 @@ int m_y;
 int n_rays;
 int n_bounds;
 
+/* Control light ray properties */
+int m_luminance;
+
 /* MATH */
 float a;
 
@@ -68,8 +85,12 @@ float a;
 extern int main(void);
 extern int ray_init(void);
 extern int ray_main(void);
+extern int check_intersection(Ray* ray, Boundary* b, Intersection* i);
 
-extern int check_intersection(LightRay* ray, Boundary* b, Intersection* i);
-extern void get_intersection(LightRay* ray, Boundary* b, Intersection* i, float t);
+extern void get_intersection(Ray* ray, Boundary* b, Intersection* i, float t);
+extern void trim_ray(Ray* ray, Intersection* i);
+extern void new_light(Light* l, int radius_);
 
-extern void trim_ray(LightRay* ray, Intersection* i);
+extern Ray new_ray(Light* l);
+
+extern void move_light(Light* l, int x, int y);

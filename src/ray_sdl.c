@@ -69,9 +69,13 @@ void event_sdl(SDL_Event* e)
             play = 1;
             break;
 
-            case SDLK_q:
-            quit = 1;
+            case SDL_MOUSEBUTTONDOWN:
+            mouse_click = 1;
             break;
+
+            // case SDLK_q:
+            // quit = 1;
+            // break;
         }
     }
 }

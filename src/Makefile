@@ -1,5 +1,5 @@
 # OBJS specifies which files to compile as part of the project
-OBJS = ray_main.c ray_sdl.c
+OBJS = ray_main.c ray_sdl.c lib/util.c lib/ellipse.c
 
 # CC specifies which compiler we're using
 CC = gcc
