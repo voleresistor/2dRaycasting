@@ -126,10 +126,24 @@ int ray_main(void)
         /* Reposition light to mouse pointer */
         for(int i = 0; i < 3; i++)
         {
-            if(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT) &
-               inside_circle(lights[i]._x_pos, lights[i]._y_pos, lights[i]._radius, m_x, m_y) == 1)
+            if(SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT))
             {
-                move_light(&lights[i], m_x, m_y);
+                if(lights[i]._m_lock == 1 && m_select == 1)
+                {
+                    move_light(&lights[i], m_x, m_y);
+                }
+                else if(inside_circle(lights[i]._x_pos, lights[i]._y_pos, lights[i]._radius, m_x, m_y) == 1 &&
+                        m_select == 0)
+                {
+                    lights[i]._m_lock = 1;
+                    m_select = 1;
+                    move_light(&lights[i], m_x, m_y);
+                }
+            }
+            else
+            {
+                lights[i]._m_lock = 0;
+                m_select = 0;
             }
         }
 
@@ -167,14 +181,6 @@ int ray_main(void)
             {
                 do_block_light(&lights[j], &bounds[i]);
             }
-
-            // for(int j = 0; j < n_rays; j++)
-            // {
-            //     if(check_intersection(&light_1._rays[j], &bounds[i], &intersect) == 1)
-            //     {
-            //         trim_ray(&light_1._rays[j], &intersect);
-            //     }
-            // }
         }
 
         /* Render the light rays and light in light blue. */

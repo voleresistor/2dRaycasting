@@ -31,6 +31,7 @@ typedef struct {
     int _radius;
     int _n_rays;
     int _luminance;
+    int _m_lock;
     Ray* _rays;
 } Light;
 
@@ -69,6 +70,7 @@ Intersection intersect;
 /* Mouse x and y position for this frame. */
 int m_x;
 int m_y;
+int m_select;
 
 /* Control number of on screen objects */
 int n_rays;
